@@ -227,9 +227,10 @@ function numberToString(number) {
     } 
     if (i10 == 1) {
         str += dec[1][i1 - 1];
-    } 
-    if (i1 > 0 ) {
-        str += toString[1][i1 - 1];
+        } else {
+        if (i1 > 0 ) {
+            str += toString[1][i1 - 1];
+        }
     }
     
     // Число выводится в текстовой форме, если на его запись в текстовой форме 
