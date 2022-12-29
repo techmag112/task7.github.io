@@ -23,10 +23,16 @@
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
+  height: 300px;
   background-color: bisque;
   border: 1px solid rgba(0, 0, 0, 0.2);
   border-radius: 4px;
   overflow: hidden;
   z-index: 1;
+}
+
+.number {
+  color:blue;
+  font-style: italic;
 }
 

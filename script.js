@@ -1,3 +1,10 @@
+// Fix:
+// 1. Ошибка с кнопкой "меньше" (ошибка с операторами округления)
+// 2. Обработчик ошибок - добавлена автоисправление ошибок нечисловых значений.
+// 3. Дергалось модальное окно при выводе сообщения об ошибке, исправлено.
+// 4. Ошибка в макете - задвоенный класс слоя.
+// 5. Исправлено оформление страницы, сделан контрастный вывод чисел
+
 let minValue,
     maxValue,
     answerNumber,
@@ -32,6 +39,13 @@ function questionPhrase() {
     return questionPhrase[phraseRandom];
 }
 
+function textAnswerField(number = '') {
+    if (number == '') {   
+        answerField.innerText = `${answerPhrase()}`;
+        } else {
+        answerField.innerHTML = `${questionPhrase()}\n<span class='number'>${number}</span>?`;
+    }
+}
 
 openModal(); 
 
@@ -44,36 +58,36 @@ document.getElementById('btnRetry').addEventListener('click', () => {
 document.getElementById('btnOver').addEventListener('click', () => {
     if (gameRun){
         if (minValue === maxValue){
-            answerField.innerText = answerPhrase();
+            textAnswerField();
             gameRun = false;
         } else {
             minValue = answerNumber  + 1;
-            answerNumber  = Math.floor((minValue + maxValue) / 2);
+            answerNumber = Math.floor((minValue + maxValue) / 2);
             orderNumber++;
             orderNumberField.innerText = orderNumber;
-            answerField.innerText = questionPhrase() + numberToString(answerNumber) + '?';
+            textAnswerField(numberToString(answerNumber));
         }
     }
 });
 
 document.getElementById('btnEqual').addEventListener('click', () => {
     if (gameRun){
-        answerField.innerText = `Я всегда угадываю\n\u{1F60E}`
+        answerField.innerText = `Я всегда угадываю\n\u{1F60E}`;
         gameRun = false;
     }
 });
 
 document.getElementById('btnLess').addEventListener('click', () => {
     if (gameRun){
-        if (minValue === maxValue){
-            answerField.innerText = answerPhrase();
+        if (minValue === maxValue) {
+            textAnswerField();
             gameRun = false;
         } else {
-            maxValue = answerNumber  - 1;
-            answerNumber  = Math.floor((minValue + maxValue) / 2);
+            maxValue = answerNumber - 1;
+            answerNumber  = Math.ceil((minValue + maxValue) / 2);
             orderNumber++;
             orderNumberField.innerText = orderNumber;
-            answerField.innerText = questionPhrase() + numberToString(answerNumber) + '?';
+            textAnswerField(numberToString(answerNumber));
         }
     }
 });
@@ -112,34 +126,38 @@ function closeModal() {
     if (minValue > maxValue) {
         errorValue(`Минимальное число не должно быть больше максимального!`);
     } else {
-        // Формирование поля игры
+        // Отключение ограничения фокуса по таб 
+        const btnGame = document.querySelectorAll('.btn');
+            btnGame.forEach(element => {
+                element.removeAttribute('tabindex', -1);
+            });   
+        // Модальное окно прячется
+        modal.classList.add('hide');
+        modal.classList.remove('show');
+            // Формирование поля игры
         answerNumber  = Math.floor((minValue + maxValue) / 2);
         orderNumber = 1;
         gameRun = true;
         orderNumberField.innerText = orderNumber;
-        answerField.innerText = `Вы загадали число ${numberToString(answerNumber)}?`;
-        // Отключение ограничения фокуса по таб 
-        const btnGame = document.querySelectorAll('.btn');
-        btnGame.forEach(element => {
-            element.removeAttribute('tabindex', -1);
-        });
-        // Модальное окно прячется
-        modal.classList.add('hide');
-        modal.classList.remove('show');
+        textAnswerField(numberToString(answerNumber)); 
     }
 }
 
 function testInput(target, selector) {
     // Обработчик ошибки ввода данных
     const inputLabel = inputBox.querySelector(selector);
+    // Если в поле ввода не числа или не минус
     if (inputLabel.value.match(/[^-0123456789]/g) && target) {
         // Делаем подсветку поля с ошибкой
         inputLabel.style.border = '1px solid red';
+        // Удаляем результат некорректного ввода
+        inputLabel.value = inputLabel.value.slice(0, -1);
         // Вызов динамического слоя с пояснением ошибки
         errorValue(`Пожалуйста, вводите только цифры или знак "минус"!`);
-    } else {
-        inputLabel.style.border = 'none';
-
+        setTimeout(() => {
+            // Удаляем подсветку ошибки через 900 мс
+            inputLabel.style.border = 'none';
+        }, 900);  
     }
 } 
 
@@ -156,6 +174,7 @@ modal.addEventListener('keyup', (e) => {
         // Проверка на корректность и переполнение ввода
         testInput(e.target.classList.contains('myInput1'), '.myInput1');
         testInput(e.target.classList.contains('myInput2'), '.myInput2');
+        // Если выходим за диапазон -999 до 999 - ставим значения по умолчанию
         parseInt(minValueInput.value) > 999 ? minValueInput.value = 999 : parseInt(minValueInput.value) < -999 ? minValueInput.value = -999 : minValueInput.value = minValueInput.value;
         parseInt(maxValueInput.value) > 999 ? maxValueInput.value = 999 : parseInt(maxValueInput.value) < -999 ? maxValueInput.value = -999 : maxValueInput.value = maxValueInput.value;
     }
@@ -185,7 +204,7 @@ modal.addEventListener('keydown', (e) => {
 // Number to String
 
 function numberToString(number) {
-    
+    //console.log(number);
     // Конвертация числа в строковое представление в диапазоне -999 до 999
     let i100,
         i10,
@@ -199,9 +218,9 @@ function numberToString(number) {
             dec = {
             1 : ['десять ', 'одиннадцать ', 'двенадцать ', 'тринадцать ', 'четырнадцать ', 'пятнадцать ', 'шестнадцать ', 'семнадцать ', 'восемнадцать ', 'девятнадцать ']
             },
-            i = Math.abs(number),
-            arr = i.toString().split('');
-    // Определяем число разрядов
+            // Превращаем число в массив
+            arr = (Math.abs(number)).toString().split('');
+    // И считаем число разрядов
     switch (arr.length) {
         case 3:
             i100 = parseInt(arr[0]);
